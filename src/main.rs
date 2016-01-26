@@ -98,6 +98,10 @@ impl AsInner<c::in6_addr> for Ipv6Addr {
 }
 
 // for &'a SocketAddr 这个是什么意思？
+// 查了资料才知道是lifetime标记
+// 如果函数返回是引用那么就必须的设置lifetime
+// lifetime只是针对与引用，如i32这样的类型就不需要设置
+
 impl<'a> IntoInner<(*const c::sockaddr, c::socklen_t)> for &'a SocketAddr {
     fn into_inner(self) -> (*const c::sockaddr, c::socklen_t) {
         match *self {
@@ -190,9 +194,13 @@ fn test_connect3() {
 }
 
 fn test_connect4(addr: SocketAddr) {
-    let (addrp, len) = servaddr.into_inner();
+    let fd;
     unsafe {
-        c::conect(fd, addrp, len);
+        fd = c::socket(c::AF_INET6, c::SOCK_STREAM, c::IPPROTO_TCP);
+    }
+    let (addrp, len) = addr.into_inner();
+    unsafe {
+          c::connect(fd, addrp, len);
     }
 }
 
